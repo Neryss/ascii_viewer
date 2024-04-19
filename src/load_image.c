@@ -7,7 +7,7 @@
 
 int loadImage(char *path, t_image *img)
 {
-    img->pixels = stbi_load("nazuna_resized.png", &img->width, &img->height, &img->channels, 0);
+    img->pixels = stbi_load(path, &img->width, &img->height, &img->channels, 0);
     if (!img->pixels)
     {
         printf("Error while loading the image\n");

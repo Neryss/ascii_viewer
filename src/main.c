@@ -101,40 +101,37 @@ void    drawLine(__uint32_t x, __uint32_t y, __uint32_t width, __uint32_t height
             putPixel(x + i, y + j, engine);
 }
 
+
+int     grayScale(int r, int g, int b)
+{
+    return(0.299 * r + 0.587 * g + 0.114 * b);
+}
+
+int     gray2palette(int p)
+{
+    int tmp = MIN((p * 8 / 255), 8 - 1);
+}
+
+// TODO: buffer instead of several printf calls
+// TODO: engine, so that I can hande gifs
+// TODO: art?
+// TODO: opti for bit shifted reading
 int main(int argc, char **argv)
 {
     t_image     img;
     loadImage("nazuna_resized.png", &img);
-    // unsigned char   *conv = NULL;
-    // conv = calloc(img.width * img.height, sizeof(unsigned char));
-    // if (!conv)
-    //     return (1);
     for (int i = 0; i < img.width * img.height * img.channels; i+=img.channels)
     {
         unsigned char r = img.pixels[i];
         unsigned char g = img.pixels[i+1];
         unsigned char b = img.pixels[i+2];
         unsigned char a = img.channels >= 4 ? img.pixels[i+3] : 0xff;
-        int y = 0.299 * r + 0.587 * g + 0.114 * b;
+        int y = grayScale(r, g, b);
         // printf("[%d, %d, %d, %d]", r, g, b, a);
-        int tmp = MIN((y * 8 / 255), 8 - 1);
+        int tmp = gray2palette(y);
         printf("%c", palette[tmp]);
         if (i % (img.width * img.channels) == 0)
             printf("\n");
     }
-    // struct winsize  w = getTermInfo();
-    // printf("lines: %d\n", w.ws_row);
-    // printf("cols : %d\n", w.ws_col);
-    // // return(0);
-    // if (initEngine(&engine, w))
-    //     return (1);
-    // (void)argc;
-    // (void)argv;
-    // for(; ;)
-    // {
-    //     drawLine(0, 0, 10, 10, &engine);
-    //     render(&engine);
-    // }
-    // freeEngine(&engine);
-    // return(0);
+    return (0);
 }
