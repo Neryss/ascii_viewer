@@ -5,7 +5,8 @@
 #include <string.h>
 #include "../include/load_image.h"
 
-const char  palette[] = "#@+=-:. ";
+// const char  palette[] = "#@+=-:. ";
+const char  palette[] = " .:-=+@#";
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
@@ -101,7 +102,6 @@ void    drawLine(__uint32_t x, __uint32_t y, __uint32_t width, __uint32_t height
             putPixel(x + i, y + j, engine);
 }
 
-
 int     grayScale(int r, int g, int b)
 {
     return(0.299 * r + 0.587 * g + 0.114 * b);
@@ -112,26 +112,58 @@ int     gray2palette(int p)
     int tmp = MIN((p * 8 / 255), 8 - 1);
 }
 
-// TODO: buffer instead of several printf calls
+int     loadFromPath(char *path, t_image *img)
+{
+    if (loadImage(path, img))
+        return (1);
+    return(0);
+}
+
+__uint32_t    *img2ascii(t_image *img)
+{
+    __uint32_t *ascii = NULL;
+    __uint32_t *start = NULL;
+    ascii = malloc(sizeof(__uint32_t) * (img->width * img->height * img->channels));
+    if (!ascii)
+        return (NULL);
+    start = ascii;
+    for (int i = 0; i < img->width * img->height * img->channels; i+=img->channels)
+    {
+        unsigned char r = img->pixels[i];
+        unsigned char g = img->pixels[i+1];
+        unsigned char b = img->pixels[i+2];
+        unsigned char a = img->channels >= 4 ? img->pixels[i+3] : 0xff;
+        int y = grayScale(r, g, b);
+        int tmp = gray2palette(y);
+        *ascii = palette[tmp];
+        ascii++;
+        if (i % (img->width * img->channels) == 0)
+        {
+            *ascii = '\n';
+            ascii++;
+        }
+    }
+    return (start);
+}
+
+void print_ascii(__uint32_t *ascii, int width, int height) {
+    write(0, ascii, sizeof(int) * (width * height + height));
+}
+
+// -TODO-: buffer instead of several printf calls
 // TODO: engine, so that I can hande gifs
 // TODO: art?
 // TODO: opti for bit shifted reading
 int main(int argc, char **argv)
 {
     t_image     img;
-    loadImage("nazuna_resized.png", &img);
-    for (int i = 0; i < img.width * img.height * img.channels; i+=img.channels)
+    if (argc != 2)
     {
-        unsigned char r = img.pixels[i];
-        unsigned char g = img.pixels[i+1];
-        unsigned char b = img.pixels[i+2];
-        unsigned char a = img.channels >= 4 ? img.pixels[i+3] : 0xff;
-        int y = grayScale(r, g, b);
-        // printf("[%d, %d, %d, %d]", r, g, b, a);
-        int tmp = gray2palette(y);
-        printf("%c", palette[tmp]);
-        if (i % (img.width * img.channels) == 0)
-            printf("\n");
+        printf("You must provide a path to a valid image\n");
+        return (1);
     }
+    loadFromPath(argv[1], &img);
+    print_ascii(img2ascii(&img), img.width, img.height);
+    free(img.pixels);
     return (0);
 }
