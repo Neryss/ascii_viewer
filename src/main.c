@@ -119,11 +119,11 @@ int     loadFromPath(char *path, t_image *img)
     return(0);
 }
 
-__uint32_t    *img2ascii(t_image *img)
+char    *img2ascii(t_image *img)
 {
-    __uint32_t *ascii = NULL;
-    __uint32_t *start = NULL;
-    ascii = malloc(sizeof(__uint32_t) * (img->width * img->height * img->channels));
+    char *ascii = NULL;
+    char *start = NULL;
+    ascii = malloc(sizeof(char) * (img->width * img->height * img->channels));
     if (!ascii)
         return (NULL);
     start = ascii;
@@ -146,8 +146,35 @@ __uint32_t    *img2ascii(t_image *img)
     return (start);
 }
 
-void print_ascii(__uint32_t *ascii, int width, int height) {
-    write(0, ascii, sizeof(int) * (width * height + height));
+t_image  *scaleImage(const t_image *src, int new_width, int new_height)
+{
+    t_image *dst = (t_image*)malloc(sizeof(t_image));
+    if (!dst)
+        return(NULL);
+    dst->width = new_width;
+    dst->height = new_height;
+    dst->channels = src->channels;
+    dst->pixels = (unsigned char *)malloc(sizeof(unsigned char) * (new_width * new_height * dst->channels));
+    if (!dst->pixels)
+    {
+        free(dst);
+        return(NULL);
+    }
+
+    double  x_ratio = (double)src->width/ new_width;
+    double  y_ratio = (double)src->height / new_height;
+
+    for (int y = 0; y < new_height; y++)
+    {
+        for (int x = 0; x < new_width; x++)
+        {
+            int src_x = (int)(x * x_ratio);
+            int src_y = (int)(y * y_ratio);
+            for (int c = 0; c < src->channels; c++)
+                dst->pixels[(y * new_width + x) *src->channels + c] = src->pixels[(src_y * src->width + src_x) * src->channels + c];
+        }
+    }
+    return(dst);
 }
 
 // -TODO-: buffer instead of several printf calls
@@ -163,7 +190,14 @@ int main(int argc, char **argv)
         return (1);
     }
     loadFromPath(argv[1], &img);
-    print_ascii(img2ascii(&img), img.width, img.height);
+    struct winsize w = getTermInfo();
+    t_image *scaled_image = scaleImage(&img, w.ws_col, w.ws_row);
+    char *ascii_buffer = img2ascii(scaled_image);
+    printf("Scaledw: %d\nScaledh: %d", scaled_image->width, scaled_image->height);
+    write(0, ascii_buffer, sizeof(char) * (scaled_image->width * scaled_image->height));
     free(img.pixels);
+    free(scaled_image->pixels);
+    free(scaled_image);
+    free(ascii_buffer);
     return (0);
 }
